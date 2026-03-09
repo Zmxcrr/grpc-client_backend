@@ -2,6 +2,8 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
+import express from 'express';
+import { join } from 'path';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -9,6 +11,13 @@ async function bootstrap() {
 
   // Cookie parser for JWT in HttpOnly cookies
   app.use(cookieParser());
+  app.use(
+    express.static(join(process.cwd(), 'public'), {
+      dotfiles: 'deny',
+      index: 'index.html',
+      fallthrough: true,
+    }),
+  );
 
   // Global validation pipe
   app.useGlobalPipes(

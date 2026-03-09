@@ -2,6 +2,8 @@
 
 NestJS backend providing REST API, GraphQL API, and SSE streams, with gRPC upstream proxy, JWT authentication, RBAC, and more.
 
+Built-in frontend UI is available at `/` (served from `public/`) for quick interaction with auth, search, history, favorites, and saved searches.
+
 ## Features
 
 - **REST API** with Swagger/OpenAPI documentation at `/api`
