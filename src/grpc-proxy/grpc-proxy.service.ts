@@ -3,8 +3,9 @@ import { ConfigService } from '@nestjs/config';
 import * as grpc from '@grpc/grpc-js';
 import * as protoLoader from '@grpc/proto-loader';
 import { join } from 'path';
-import { GrpcCallLogsService } from '../grpc-call-logs/grpc-call-logs.service';
-import { NotificationsService } from '../notifications/notifications.service';
+import { GrpcCallLogsService } from '../grpc-call-logs/grpc-call-logs.service.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
+import { SearchHistoryService } from '../search-history/search-history.service.js';
 
 @Injectable()
 export class GrpcProxyService implements OnModuleInit {
@@ -15,6 +16,7 @@ export class GrpcProxyService implements OnModuleInit {
     private readonly configService: ConfigService,
     private readonly grpcCallLogsService: GrpcCallLogsService,
     private readonly notificationsService: NotificationsService,
+    private readonly searchHistoryService: SearchHistoryService,
   ) {}
 
   onModuleInit() {
@@ -50,6 +52,11 @@ export class GrpcProxyService implements OnModuleInit {
     userId?: string,
   ): Promise<any> {
     const startTime = Date.now();
+
+    // Auto-add to search history
+    if (userId) {
+      await this.searchHistoryService.add(userId, query, filters);
+    }
 
     try {
       const result = await this.callGrpcSearch(query, filters);
