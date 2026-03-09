@@ -10,7 +10,11 @@ function parseJsonField(value) {
   if (!trimmed) {
     return undefined;
   }
-  return JSON.parse(trimmed);
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    throw new Error('Filters must be valid JSON');
+  }
 }
 
 async function api(path, options = {}) {

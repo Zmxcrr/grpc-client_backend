@@ -11,7 +11,13 @@ async function bootstrap() {
 
   // Cookie parser for JWT in HttpOnly cookies
   app.use(cookieParser());
-  app.use(express.static(join(process.cwd(), 'public')));
+  app.use(
+    express.static(join(process.cwd(), 'public'), {
+      dotfiles: 'deny',
+      index: 'index.html',
+      fallthrough: true,
+    }),
+  );
 
   // Global validation pipe
   app.useGlobalPipes(
