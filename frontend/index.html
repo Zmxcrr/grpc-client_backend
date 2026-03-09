@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>gRPC Client Backend - Test UI</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <style>
+    :root {
+      --sidebar-width: 220px;
+      --header-height: 56px;
+    }
+    body { background: #f0f2f5; font-size: 14px; }
+
+    /* ── Sidebar ── */
+    #sidebar {
+      position: fixed; top: 0; left: 0; bottom: 0;
+      width: var(--sidebar-width);
+      background: #1e293b; color: #cbd5e1;
+      display: flex; flex-direction: column; z-index: 100;
+    }
+    #sidebar .brand {
+      height: var(--header-height);
+      display: flex; align-items: center; padding: 0 1rem;
+      font-weight: 700; font-size: 1rem; color: #f8fafc;
+      border-bottom: 1px solid #334155;
+    }
+    #sidebar .nav-link {
+      color: #94a3b8; border-radius: 6px; margin: 2px 8px;
+      padding: 7px 12px; transition: background .15s, color .15s;
+    }
+    #sidebar .nav-link:hover, #sidebar .nav-link.active {
+      background: #334155; color: #f8fafc;
+    }
+    #sidebar .nav-link i { margin-right: 8px; }
+
+    /* ── Auth bar ── */
+    #authbar {
+      position: fixed; top: 0; left: var(--sidebar-width); right: 0;
+      height: var(--header-height);
+      background: #fff; border-bottom: 1px solid #e2e8f0;
+      display: flex; align-items: center; padding: 0 1.5rem;
+      gap: 1rem; z-index: 99;
+    }
+    #authbar .token-badge {
+      font-size: 11px; color: #64748b;
+      max-width: 340px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+
+    /* ── Main content ── */
+    #main {
+      margin-left: var(--sidebar-width);
+      margin-top: var(--header-height);
+      padding: 1.5rem;
+      min-height: calc(100vh - var(--header-height));
+    }
+    .section { display: none; }
+    .section.active { display: block; }
+
+    /* ── Cards & response boxes ── */
+    .card { border: none; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+    .card-header { font-weight: 600; }
+    pre.response {
+      background: #0f172a; color: #7dd3fc;
+      border-radius: 6px; padding: .75rem 1rem;
+      font-size: 12px; max-height: 320px; overflow: auto;
+      white-space: pre-wrap; word-break: break-all;
+    }
+    .badge-method {
+      font-size: 10px; padding: 2px 6px; border-radius: 3px; font-weight: 700;
+    }
+    .m-GET    { background: #d1fae5; color: #065f46; }
+    .m-POST   { background: #dbeafe; color: #1e40af; }
+    .m-PATCH  { background: #fef9c3; color: #854d0e; }
+    .m-DELETE { background: #fee2e2; color: #991b1b; }
+    .m-GQL    { background: #ede9fe; color: #5b21b6; }
+    .m-SSE    { background: #fce7f3; color: #9d174d; }
+
+    .sse-log {
+      background: #0f172a; color: #86efac;
+      border-radius: 6px; padding: .75rem 1rem;
+      font-size: 12px; height: 200px; overflow: auto;
+    }
+    .endpoint-label {
+      font-family: monospace; font-size: 12px;
+      color: #475569; margin-bottom: .25rem;
+    }
+    .status-ok   { color: #16a34a; }
+    .status-err  { color: #dc2626; }
+
+    /* GraphQL textarea */
+    .gql-editor {
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      background: #1e293b; color: #e2e8f0;
+      border: none; border-radius: 6px;
+      padding: .75rem; resize: vertical;
+    }
+    .gql-vars {
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ Sidebar ═══════════════════════════════════════════════════════════ -->
+<nav id="sidebar">
+  <div class="brand"><i class="bi bi-cpu me-2"></i>Backend Test UI</div>
+  <ul class="nav flex-column mt-2 flex-grow-1">
+    <li><a class="nav-link active" href="#" data-section="auth">
+      <i class="bi bi-shield-lock"></i>Auth</a></li>
+    <li><a class="nav-link" href="#" data-section="favorites">
+      <i class="bi bi-heart"></i>Favorites</a></li>
+    <li><a class="nav-link" href="#" data-section="collections">
+      <i class="bi bi-folder-heart"></i>Collections</a></li>
+    <li><a class="nav-link" href="#" data-section="saved-search">
+      <i class="bi bi-bookmark-star"></i>Saved Searches</a></li>
+    <li><a class="nav-link" href="#" data-section="history">
+      <i class="bi bi-clock-history"></i>Search History</a></li>
+    <li><a class="nav-link" href="#" data-section="grpc-proxy">
+      <i class="bi bi-send-arrow-up"></i>gRPC Proxy</a></li>
+    <li><a class="nav-link" href="#" data-section="grpc-logs">
+      <i class="bi bi-journal-code"></i>gRPC Logs</a></li>
+    <li><a class="nav-link" href="#" data-section="sse">
+      <i class="bi bi-broadcast"></i>SSE Notifications</a></li>
+    <li><a class="nav-link" href="#" data-section="graphql">
+      <i class="bi bi-braces"></i>GraphQL Explorer</a></li>
+  </ul>
+  <div class="px-3 py-2 text-muted" style="font-size:11px;">
+    v1.0 · gRPC Client Backend
+  </div>
+</nav>
+
+<!-- ═══ Auth bar ══════════════════════════════════════════════════════════ -->
+<div id="authbar">
+  <div class="d-flex align-items-center gap-2">
+    <span id="authStatus" class="badge bg-secondary">Not logged in</span>
+    <span class="token-badge" id="tokenPreview">—</span>
+  </div>
+  <div class="ms-auto d-flex align-items-center gap-2">
+    <label class="me-1 text-secondary" style="font-size:12px;">Backend URL</label>
+    <input id="baseUrl" type="text" class="form-control form-control-sm"
+           style="width:220px;" value="http://localhost:3000" />
+    <button class="btn btn-sm btn-outline-danger" onclick="logout()">
+      <i class="bi bi-box-arrow-right"></i> Logout
+    </button>
+  </div>
+</div>
+
+<!-- ═══ Main ═════════════════════════════════════════════════════════════ -->
+<div id="main">
+
+  <!-- ── Auth ─────────────────────────────────────────────────────────── -->
+  <div class="section active" id="section-auth">
+    <h4 class="mb-3"><i class="bi bi-shield-lock me-2"></i>Authentication</h4>
+    <div class="row g-3">
+
+      <!-- Register -->
+      <div class="col-md-4">
+        <div class="card h-100">
+          <div class="card-header bg-primary text-white d-flex align-items-center gap-2">
+            <span class="badge-method m-POST">POST</span>
+            /auth/register
+          </div>
+          <div class="card-body">
+            <div class="endpoint-label">REST · POST /auth/register</div>
+            <div class="mb-2">
+              <label class="form-label">Email</label>
+              <input id="reg-email" class="form-control form-control-sm" value="user@example.com" />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Password (min 6)</label>
+              <input id="reg-password" class="form-control form-control-sm" type="password" value="password123" />
+            </div>
+            <button class="btn btn-primary btn-sm w-100" onclick="register()">Register</button>
+            <pre class="response mt-2" id="reg-res">—</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- Login -->
+      <div class="col-md-4">
+        <div class="card h-100">
+          <div class="card-header bg-success text-white d-flex align-items-center gap-2">
+            <span class="badge-method m-POST">POST</span>
+            /auth/login
+          </div>
+          <div class="card-body">
+            <div class="endpoint-label">REST · POST /auth/login</div>
+            <div class="mb-2">
+              <label class="form-label">Email</label>
+              <input id="login-email" class="form-control form-control-sm" value="user@example.com" />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Password</label>
+              <input id="login-password" class="form-control form-control-sm" type="password" value="password123" />
+            </div>
+            <button class="btn btn-success btn-sm w-100" onclick="login()">Login &amp; Save Token</button>
+            <pre class="response mt-2" id="login-res">—</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- Set Role -->
+      <div class="col-md-4">
+        <div class="card h-100">
+          <div class="card-header bg-warning d-flex align-items-center gap-2">
+            <span class="badge-method m-POST">POST</span>
+            /auth/set-role
+          </div>
+          <div class="card-body">
+            <div class="endpoint-label">REST · POST /auth/set-role · 🔐 ADMIN</div>
+            <div class="mb-2">
+              <label class="form-label">User ID (UUID)</label>
+              <input id="setrole-id" class="form-control form-control-sm" placeholder="uuid of target user" />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Role</label>
+              <select id="setrole-role" class="form-select form-select-sm">
+                <option value="USER">USER</option>
+                <option value="PREMIUM">PREMIUM</option>
+                <option value="MODERATOR">MODERATOR</option>
+                <option value="ADMIN">ADMIN</option>
+              </select>
+            </div>
+            <button class="btn btn-warning btn-sm w-100" onclick="setRole()">Set Role</button>
+            <pre class="response mt-2" id="setrole-res">—</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GraphQL auth -->
+    <h5 class="mt-4 mb-3"><i class="bi bi-braces me-2"></i>GraphQL Auth Mutations</h5>
+    <div class="row g-3">
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header d-flex align-items-center gap-2">
+            <span class="badge-method m-GQL">GQL</span>register mutation
+          </div>
+          <div class="card-body">
+            <div class="endpoint-label">POST /graphql</div>
+            <div class="mb-2">
+              <label class="form-label">Email</label>
+              <input id="gql-reg-email" class="form-control form-control-sm" value="gql@example.com" />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Password</label>
+              <input id="gql-reg-password" class="form-control form-control-sm" type="password" value="password123" />
+            </div>
+            <button class="btn btn-sm w-100" style="background:#7c3aed;color:#fff;" onclick="gqlRegister()">
+              Run GraphQL Register
+            </button>
+            <pre class="response mt-2" id="gql-reg-res">—</pre>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header d-flex align-items-center gap-2">
+            <span class="badge-method m-GQL">GQL</span>login mutation
+          </div>
+          <div class="card-body">
+            <div class="endpoint-label">POST /graphql</div>
+            <div class="mb-2">
+              <label class="form-label">Email</label>
+              <input id="gql-login-email" class="form-control form-control-sm" value="gql@example.com" />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Password</label>
+              <input id="gql-login-password" class="form-control form-control-sm" type="password" value="password123" />
+            </div>
+            <button class="btn btn-sm w-100" style="background:#7c3aed;color:#fff;" onclick="gqlLogin()">
+              Run GraphQL Login &amp; Save Token
+            </button>
+            <pre class="response mt-2" id="gql-login-res">—</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /section-auth -->
+
+
+  <!-- ── Favorites ─────────────────────────────────────────────────────── -->
+  <div class="section" id="section-favorites">
+    <h4 class="mb-3"><i class="bi bi-heart me-2"></i>Favorites</h4>
+    <div class="row g-3">
+
+      <!-- GET favorites -->
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header d-flex align-items-center gap-2">
+            <span class="badge-method m-GET">GET</span>/favorites
+          </div>
+          <div class="card-body">
+            <div class="endpoint-label">REST · GET /favorites · 🔐</div>
+            <button class="btn btn-outline-success btn-sm" onclick="getFavorites()">
+              <i class="bi bi-arrow-clockwise"></i> Fetch Favorites
+            </button>
+            <pre class="response mt-2" id="fav-list-res">—</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- POST favorites -->
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header d-flex align-items-center gap-2">
+            <span class="badge-method m-POST">POST</span>/favorites
+          </div>
+          <div class="card-body">
+            <div class="endpoint-label">REST · POST /favorites · 🔐</div>
+            <div class="mb-2">
+              <label class="form-label">Item ID</label>
+              <input id="fav-itemId" class="form-control form-control-sm" value="item-001" />
+            </div>
+            <div class="mb-2">
+              <label class="form-label">Collection ID (optional, UUID)</label>
+              <input id="fav-collId" class="form-control form-control-sm" placeholder="leave blank" />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Payload (JSON, optional)</label>
+              <input id="fav-payload" class="form-control form-control-sm" value='{"title":"Test item"}' />
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="addFavorite()">Add Favorite</button>
+            <pre class="response mt-2" id="fav-add-res">—</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- DELETE favorite -->
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header d-flex align-items-center gap-2">
+            <span class="badge-method m-DELETE">DELETE</span>/favorites/:itemId
+          </div>
+          <div class="card-body">
+            <div class="endpoint-label">REST · DELETE /favorites/:itemId · 🔐</div>
+            <div class="mb-3">
+              <label class="form-label">Item ID to Remove</label>
+              <input id="fav-del-id" class="form-control form-control-sm" value="item-001" />
+            </div>
+            <button class="btn btn-danger btn-sm" onclick="removeFavorite()">Remove Favorite</button>
+            <pre class="response mt-2" id="fav-del-res">—</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- GQL favorites -->
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header d-flex align-items-center gap-2">
+            <span class="badge-method m-GQL">GQL</span>favorites query
+          </div>
+          <div class="card-body">
+            <div class="endpoint-label">POST /graphql · 🔐</div>
+            <button class="btn btn-sm w-100" style="background:#7c3aed;color:#fff;" onclick="gqlGetFavorites()">
+              GraphQL: Get Favorites
+            </button>
+            <pre class="response mt-2" id="gql-fav-res">—</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /section-favorites -->
+
+
+  <!-- ── Collections ───────────────────────────────────────────────────── -->
+  <div class="section" id="section-collections">
+    <h4 class="mb-3"><i class="bi bi-folder-heart me-2"></i>Favorite Collections</h4>
+    <div class="row g-3">
+
+      <!-- GET collections -->
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header d-flex align-items-center gap-2">
+            <span class="badge-method m-GET">GET</span>/favorite-collections
+          </div>
+          <div class="card-body">
+            <div class="endpoint-label">REST · GET /favorite-collections · 🔐</div>
+            <button class="btn btn-outline-success btn-sm" onclick="getCollections()">
+              <i class="bi bi-arrow-clockwise"></i> Fetch Collections
+            </button>
+            <pre class="response mt-2" id="coll-list-res">—</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- POST collection -->
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header d-flex align-items-center gap-2">
+            <span class="badge-method m-POST">POST</span>/favorite-collections
+          </div>
+          <div class="card-body">
+            <div class="endpoint-label">REST · POST /favorite-collections · 🔐</div>
+            <div class="mb-3">
+              <label class="form-label">Collection Name</label>
+              <input id="coll-name" class="form-control form-control-sm" value="My Collection" />
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="createCollection()">Create Collection</button>
+            <pre class="response mt-2" id="coll-create-res">—</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- PATCH collection -->
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header d-flex align-items-center gap-2">
+            <span class="badge-method m-PATCH">PATCH</span>/favorite-collections/:id
+          </div>
+          <div class="card-body">
+            <div class="endpoint-label">REST · PATCH /favorite-collections/:id · 🔐</div>
+            <div class="mb-2">
+              <label class="form-label">Collection ID (UUID)</label>
+              <input id="coll-upd-id" class="form-control form-control-sm" placeholder="uuid" />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">New Name</label>
+              <input id="coll-upd-name" class="form-control form-control-sm" value="Renamed Collection" />
+            </div>
+            <button class="btn btn-warning btn-sm" onclick="updateCollection()">Update Collection</button>
+            <pre class="response mt-2" id="coll-upd-res">—</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- DELETE collection -->
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header d-flex align-items-center gap-2">
+            <span class="badge-method m-DELETE">DELETE</span>/favorite-collections/:id
+          </div>
+          <div class="card-body">
+            <div class="endpoint-label">REST · DELETE /favorite-collections/:id · 🔐</div>
+            <div class="mb-3">
+              <label class="form-label">Collection ID (UUID)</label>
+              <input id="coll-del-id" class="form-control form-control-sm" placeholder="uuid" />
+            </div>
+            <button class="btn btn-danger btn-sm" onclick="deleteCollection()">Delete Collection</button>
+            <pre class="response mt-2" id="coll-del-res">—</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /section-collections -->
+
+
+  <!-- ── Saved Searches ────────────────────────────────────────────────── -->
+  <div class="section" id="section-saved-search">
+    <h4 class="mb-3"><i class="bi bi-bookmark-star me-2"></i>Saved Searches</h4>
+    <div class="row g-3">
+
+      <!-- GET saved searches -->
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header d-flex align-items-center gap-2">
+            <span class="badge-method m-GET">GET</span>/saved-searches
+          </div>
+          <div class="card-body">
+            <div class="endpoint-label">REST · GET /saved-searches · 🔐</div>
+            <button class="btn btn-outline-success btn-sm" onclick="getSavedSearches()">
+              <i class="bi bi-arrow-clockwise"></i> Fetch Saved Searches
+            </button>
+            <pre class="response mt-2" id="ss-list-res">—</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- POST saved search -->
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header d-flex align-items-center gap-2">
+            <span class="badge-method m-POST">POST</span>/saved-searches
+          </div>
+          <div class="card-body">
+            <div class="endpoint-label">REST · POST /saved-searches · 🔐</div>
+            <div class="mb-2">
+              <label class="form-label">Name</label>
+              <input id="ss-name" class="form-control form-control-sm" value="My Search" />
+            </div>
+            <div class="mb-2">
+              <label class="form-label">Query</label>
+              <input id="ss-query" class="form-control form-control-sm" value="grpc tutorial" />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Filters (JSON, optional)</label>
+              <input id="ss-filters" class="form-control form-control-sm" value='{"lang":"en"}' />
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="createSavedSearch()">Create Saved Search</button>
+            <pre class="response mt-2" id="ss-create-res">—</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- PATCH saved search -->
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header d-flex align-items-center gap-2">
+            <span class="badge-method m-PATCH">PATCH</span>/saved-searches/:id
+          </div>
+          <div class="card-body">
+            <div class="endpoint-label">REST · PATCH /saved-searches/:id · 🔐</div>
+            <div class="mb-2">
+              <label class="form-label">Saved Search ID (UUID)</label>
+              <input id="ss-upd-id" class="form-control form-control-sm" placeholder="uuid" />
+            </div>
+            <div class="mb-2">
+              <label class="form-label">New Name (optional)</label>
+              <input id="ss-upd-name" class="form-control form-control-sm" value="Updated Search" />
+            </div>
+            <div class="mb-2">
+              <label class="form-label">New Query (optional)</label>
+              <input id="ss-upd-query" class="form-control form-control-sm" value="updated query" />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">New Filters JSON (optional)</label>
+              <input id="ss-upd-filters" class="form-control form-control-sm" placeholder='{"lang":"ru"}' />
+            </div>
+            <button class="btn btn-warning btn-sm" onclick="updateSavedSearch()">Update</button>
+            <pre class="response mt-2" id="ss-upd-res">—</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- DELETE saved search -->
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header d-flex align-items-center gap-2">
+            <span class="badge-method m-DELETE">DELETE</span>/saved-searches/:id
+          </div>
+          <div class="card-body">
+            <div class="endpoint-label">REST · DELETE /saved-searches/:id · 🔐</div>
+            <div class="mb-3">
+              <label class="form-label">Saved Search ID (UUID)</label>
+              <input id="ss-del-id" class="form-control form-control-sm" placeholder="uuid" />
+            </div>
+            <button class="btn btn-danger btn-sm" onclick="deleteSavedSearch()">Delete</button>
+            <pre class="response mt-2" id="ss-del-res">—</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /section-saved-search -->
+
+
+  <!-- ── Search History ────────────────────────────────────────────────── -->
+  <div class="section" id="section-history">
+    <h4 class="mb-3"><i class="bi bi-clock-history me-2"></i>Search History</h4>
+    <div class="row g-3">
+
+      <!-- GET history -->
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header d-flex align-items-center gap-2">
+            <span class="badge-method m-GET">GET</span>/history
+          </div>
+          <div class="card-body">
+            <div class="endpoint-label">REST · GET /history · 🔐</div>
+            <div class="mb-3">
+              <label class="form-label">Limit (default 50)</label>
+              <input id="hist-limit" class="form-control form-control-sm" value="50" type="number" />
+            </div>
+            <button class="btn btn-outline-success btn-sm" onclick="getHistory()">
+              <i class="bi bi-arrow-clockwise"></i> Fetch History
+            </button>
+            <pre class="response mt-2" id="hist-list-res">—</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- DELETE history -->
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header d-flex align-items-center gap-2">
+            <span class="badge-method m-DELETE">DELETE</span>/history
+          </div>
+          <div class="card-body">
+            <div class="endpoint-label">REST · DELETE /history · 🔐</div>
+            <p class="text-muted small">Clears <strong>all</strong> search history for the current user.</p>
+            <button class="btn btn-danger btn-sm" onclick="clearHistory()">Clear All History</button>
+            <pre class="response mt-2" id="hist-del-res">—</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- GQL history -->
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header d-flex align-items-center gap-2">
+            <span class="badge-method m-GQL">GQL</span>history query
+          </div>
+          <div class="card-body">
+            <div class="endpoint-label">POST /graphql · 🔐</div>
+            <div class="mb-3">
+              <label class="form-label">Limit</label>
+              <input id="gql-hist-limit" class="form-control form-control-sm" value="20" type="number" />
+            </div>
+            <button class="btn btn-sm w-100" style="background:#7c3aed;color:#fff;" onclick="gqlGetHistory()">
+              GraphQL: Get History
+            </button>
+            <pre class="response mt-2" id="gql-hist-res">—</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- GQL clearHistory -->
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header d-flex align-items-center gap-2">
+            <span class="badge-method m-GQL">GQL</span>clearHistory mutation
+          </div>
+          <div class="card-body">
+            <div class="endpoint-label">POST /graphql · 🔐</div>
+            <button class="btn btn-sm w-100" style="background:#7c3aed;color:#fff;" onclick="gqlClearHistory()">
+              GraphQL: Clear History
+            </button>
+            <pre class="response mt-2" id="gql-hist-clear-res">—</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /section-history -->
+
+
+  <!-- ── gRPC Proxy ─────────────────────────────────────────────────────── -->
+  <div class="section" id="section-grpc-proxy">
+    <h4 class="mb-3"><i class="bi bi-send-arrow-up me-2"></i>gRPC Proxy</h4>
+    <div class="row g-3">
+
+      <!-- REST proxy -->
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header d-flex align-items-center gap-2">
+            <span class="badge-method m-POST">POST</span>/proxy/search
+          </div>
+          <div class="card-body">
+            <div class="endpoint-label">REST · POST /proxy/search · 🔐</div>
+            <div class="mb-2">
+              <label class="form-label">Query</label>
+              <input id="proxy-query" class="form-control form-control-sm" value="hello world" />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Filters (JSON, optional)</label>
+              <input id="proxy-filters" class="form-control form-control-sm" value='{"category":"news"}' />
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="proxySearch()">Send Proxy Search</button>
+            <pre class="response mt-2" id="proxy-res">—</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- GQL proxy -->
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header d-flex align-items-center gap-2">
+            <span class="badge-method m-GQL">GQL</span>proxySearch query
+          </div>
+          <div class="card-body">
+            <div class="endpoint-label">POST /graphql · 🔐</div>
+            <div class="mb-2">
+              <label class="form-label">Query</label>
+              <input id="gql-proxy-query" class="form-control form-control-sm" value="hello world" />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Filters (JSON, optional)</label>
+              <input id="gql-proxy-filters" class="form-control form-control-sm" value='{"category":"news"}' />
+            </div>
+            <button class="btn btn-sm w-100" style="background:#7c3aed;color:#fff;" onclick="gqlProxySearch()">
+              GraphQL: Proxy Search
+            </button>
+            <pre class="response mt-2" id="gql-proxy-res">—</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /section-grpc-proxy -->
+
+
+  <!-- ── gRPC Logs ─────────────────────────────────────────────────────── -->
+  <div class="section" id="section-grpc-logs">
+    <h4 class="mb-3"><i class="bi bi-journal-code me-2"></i>gRPC Call Logs</h4>
+    <p class="text-muted small">🔐 Requires <strong>MODERATOR</strong> or <strong>ADMIN</strong> role.</p>
+    <div class="row g-3">
+
+      <!-- REST logs -->
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header d-flex align-items-center gap-2">
+            <span class="badge-method m-GET">GET</span>/grpc-call-logs
+          </div>
+          <div class="card-body">
+            <div class="endpoint-label">REST · GET /grpc-call-logs · 🔐 MOD/ADMIN</div>
+            <div class="mb-3">
+              <label class="form-label">Limit (default 100)</label>
+              <input id="logs-limit" class="form-control form-control-sm" value="100" type="number" />
+            </div>
+            <button class="btn btn-outline-success btn-sm" onclick="getGrpcLogs()">
+              <i class="bi bi-arrow-clockwise"></i> Fetch Logs
+            </button>
+            <pre class="response mt-2" id="logs-res">—</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- GQL logs -->
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header d-flex align-items-center gap-2">
+            <span class="badge-method m-GQL">GQL</span>grpcCallLogs query
+          </div>
+          <div class="card-body">
+            <div class="endpoint-label">POST /graphql · 🔐 MOD/ADMIN</div>
+            <div class="mb-3">
+              <label class="form-label">Limit</label>
+              <input id="gql-logs-limit" class="form-control form-control-sm" value="50" type="number" />
+            </div>
+            <button class="btn btn-sm w-100" style="background:#7c3aed;color:#fff;" onclick="gqlGetLogs()">
+              GraphQL: Get Logs
+            </button>
+            <pre class="response mt-2" id="gql-logs-res">—</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /section-grpc-logs -->
+
+
+  <!-- ── SSE Notifications ──────────────────────────────────────────────── -->
+  <div class="section" id="section-sse">
+    <h4 class="mb-3"><i class="bi bi-broadcast me-2"></i>SSE Notifications</h4>
+    <div class="row g-3">
+
+      <!-- User notifications -->
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header d-flex align-items-center gap-2">
+            <span class="badge-method m-SSE">SSE</span>GET /sse/events
+          </div>
+          <div class="card-body">
+            <div class="endpoint-label">Server-Sent Events · GET /sse/events · 🔐</div>
+            <p class="text-muted small">
+              Streams real-time notifications for the authenticated user.
+              JWT is sent as a query param <code>?token=…</code>
+            </p>
+            <div class="d-flex gap-2 mb-2">
+              <button class="btn btn-success btn-sm" onclick="startUserSSE()">
+                <i class="bi bi-play-fill"></i> Connect
+              </button>
+              <button class="btn btn-danger btn-sm" onclick="stopUserSSE()">
+                <i class="bi bi-stop-fill"></i> Disconnect
+              </button>
+              <span id="sse-user-status" class="badge bg-secondary align-self-center">Disconnected</span>
+            </div>
+            <div class="sse-log" id="sse-user-log">Waiting for events…</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Admin gRPC stream -->
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header d-flex align-items-center gap-2">
+            <span class="badge-method m-SSE">SSE</span>GET /sse/admin/grpc-calls
+          </div>
+          <div class="card-body">
+            <div class="endpoint-label">Server-Sent Events · GET /sse/admin/grpc-calls · 🔐 MOD/ADMIN</div>
+            <p class="text-muted small">
+              Live stream of all gRPC proxy calls (admin monitoring).
+            </p>
+            <div class="d-flex gap-2 mb-2">
+              <button class="btn btn-success btn-sm" onclick="startAdminSSE()">
+                <i class="bi bi-play-fill"></i> Connect
+              </button>
+              <button class="btn btn-danger btn-sm" onclick="stopAdminSSE()">
+                <i class="bi bi-stop-fill"></i> Disconnect
+              </button>
+              <span id="sse-admin-status" class="badge bg-secondary align-self-center">Disconnected</span>
+            </div>
+            <div class="sse-log" id="sse-admin-log">Waiting for events…</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /section-sse -->
+
+
+  <!-- ── GraphQL Explorer ──────────────────────────────────────────────── -->
+  <div class="section" id="section-graphql">
+    <h4 class="mb-3"><i class="bi bi-braces me-2"></i>GraphQL Explorer</h4>
+    <div class="card">
+      <div class="card-body">
+        <div class="endpoint-label mb-2">POST /graphql · token auto-injected from session</div>
+        <div class="row g-3">
+          <div class="col-md-8">
+            <label class="form-label fw-semibold">Query / Mutation</label>
+            <textarea id="gql-custom-query" class="form-control gql-editor" rows="14">query GetHistory($limit: Int) {
+  history(limit: $limit) {
+    id
+    query
+    filters
+    createdAt
+  }
+}</textarea>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">Variables (JSON)</label>
+            <textarea id="gql-custom-vars" class="form-control gql-vars" rows="6">{ "limit": 10 }</textarea>
+            <label class="form-label fw-semibold mt-3">Preset Queries</label>
+            <div class="d-grid gap-1">
+              <button class="btn btn-sm btn-outline-secondary" onclick="loadPreset('favorites')">favorites</button>
+              <button class="btn btn-sm btn-outline-secondary" onclick="loadPreset('favoriteCollections')">favoriteCollections</button>
+              <button class="btn btn-sm btn-outline-secondary" onclick="loadPreset('savedSearches')">savedSearches</button>
+              <button class="btn btn-sm btn-outline-secondary" onclick="loadPreset('history')">history</button>
+              <button class="btn btn-sm btn-outline-secondary" onclick="loadPreset('grpcCallLogs')">grpcCallLogs</button>
+              <button class="btn btn-sm btn-outline-secondary" onclick="loadPreset('proxySearch')">proxySearch</button>
+              <button class="btn btn-sm btn-outline-secondary" onclick="loadPreset('addFavorite')">addFavorite</button>
+              <button class="btn btn-sm btn-outline-secondary" onclick="loadPreset('createSavedSearch')">createSavedSearch</button>
+              <button class="btn btn-sm btn-outline-secondary" onclick="loadPreset('clearHistory')">clearHistory</button>
+            </div>
+          </div>
+        </div>
+        <button class="btn mt-3 px-4" style="background:#7c3aed;color:#fff;" onclick="runCustomGql()">
+          <i class="bi bi-play-fill"></i> Execute
+        </button>
+        <pre class="response mt-3" id="gql-custom-res" style="max-height:400px;">—</pre>
+      </div>
+    </div>
+  </div><!-- /section-graphql -->
+
+</div><!-- /main -->
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+//  State
+// ═══════════════════════════════════════════════════════════════════════════
+let TOKEN = localStorage.getItem('jwt_token') || '';
+let userSseSource = null;
+let adminSseSource = null;
+
+function base() {
+  return document.getElementById('baseUrl').value.replace(/\/$/, '');
+}
+
+// ── Token management ────────────────────────────────────────────────────
+function saveToken(t) {
+  TOKEN = t;
+  localStorage.setItem('jwt_token', t);
+  const preview = document.getElementById('tokenPreview');
+  const status  = document.getElementById('authStatus');
+  if (t) {
+    preview.textContent = t.slice(0, 60) + '…';
+    status.className = 'badge bg-success';
+    status.textContent = 'Authenticated ✓';
+  } else {
+    preview.textContent = '—';
+    status.className = 'badge bg-secondary';
+    status.textContent = 'Not logged in';
+  }
+}
+
+function logout() {
+  saveToken('');
+}
+
+// Restore on load
+if (TOKEN) saveToken(TOKEN);
+
+// ── Helpers ─────────────────────────────────────────────────────────────
+function authHeaders() {
+  const h = { 'Content-Type': 'application/json' };
+  if (TOKEN) h['Authorization'] = 'Bearer ' + TOKEN;
+  return h;
+}
+
+function show(elId, data, ok = true) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  el.textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+  el.style.color = ok ? '#7dd3fc' : '#fca5a5';
+}
+
+async function api(method, path, body, resId) {
+  try {
+    const opts = { method, headers: authHeaders() };
+    if (body) opts.body = JSON.stringify(body);
+    const r = await fetch(base() + path, opts);
+    const text = await r.text();
+    let parsed;
+    try { parsed = JSON.parse(text); } catch { parsed = text; }
+    show(resId, parsed, r.ok);
+    return { ok: r.ok, data: parsed, status: r.status };
+  } catch (err) {
+    show(resId, `Network error: ${err.message}`, false);
+    return { ok: false };
+  }
+}
+
+async function gql(query, variables, resId) {
+  try {
+    const r = await fetch(base() + '/graphql', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ query, variables: variables || {} }),
+    });
+    const json = await r.json();
+    show(resId, json, !json.errors);
+    return json;
+  } catch (err) {
+    show(resId, `Network error: ${err.message}`, false);
+    return null;
+  }
+}
+
+// ── Navigation ───────────────────────────────────────────────────────────
+document.querySelectorAll('#sidebar .nav-link').forEach(link => {
+  link.addEventListener('click', e => {
+    e.preventDefault();
+    document.querySelectorAll('#sidebar .nav-link').forEach(l => l.classList.remove('active'));
+    link.classList.add('active');
+    const sec = link.dataset.section;
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.getElementById('section-' + sec).classList.add('active');
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  AUTH
+// ═══════════════════════════════════════════════════════════════════════════
+async function register() {
+  await api('POST', '/auth/register', {
+    email: v('reg-email'),
+    password: v('reg-password'),
+  }, 'reg-res');
+}
+
+async function login() {
+  const r = await api('POST', '/auth/login', {
+    email: v('login-email'),
+    password: v('login-password'),
+  }, 'login-res');
+  if (r.ok && r.data?.access_token) saveToken(r.data.access_token);
+  else if (r.ok && r.data?.token) saveToken(r.data.token);
+}
+
+async function setRole() {
+  await api('POST', '/auth/set-role', {
+    userId: v('setrole-id'),
+    role: v('setrole-role'),
+  }, 'setrole-res');
+}
+
+async function gqlRegister() {
+  await gql(`mutation Register($input: RegisterDto!) {
+  register(input: $input) { access_token user { id email role } }
+}`, { input: { email: v('gql-reg-email'), password: v('gql-reg-password') } }, 'gql-reg-res');
+}
+
+async function gqlLogin() {
+  const r = await gql(`mutation Login($input: LoginDto!) {
+  login(input: $input) { access_token user { id email role } }
+}`, { input: { email: v('gql-login-email'), password: v('gql-login-password') } }, 'gql-login-res');
+  const token = r?.data?.login?.access_token;
+  if (token) saveToken(token);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  FAVORITES
+// ═══════════════════════════════════════════════════════════════════════════
+async function getFavorites() {
+  await api('GET', '/favorites', null, 'fav-list-res');
+}
+
+async function addFavorite() {
+  const body = { itemId: v('fav-itemId') };
+  const col = v('fav-collId');
+  if (col) body.collectionId = col;
+  const p = v('fav-payload');
+  if (p) { try { body.payload = JSON.parse(p); } catch { body.payload = p; } }
+  await api('POST', '/favorites', body, 'fav-add-res');
+}
+
+async function removeFavorite() {
+  await api('DELETE', '/favorites/' + v('fav-del-id'), null, 'fav-del-res');
+}
+
+async function gqlGetFavorites() {
+  await gql(`query {
+  favorites {
+    id itemId payload collectionId createdAt
+  }
+}`, {}, 'gql-fav-res');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  COLLECTIONS
+// ═══════════════════════════════════════════════════════════════════════════
+async function getCollections() {
+  await api('GET', '/favorite-collections', null, 'coll-list-res');
+}
+
+async function createCollection() {
+  await api('POST', '/favorite-collections', { name: v('coll-name') }, 'coll-create-res');
+}
+
+async function updateCollection() {
+  await api('PATCH', '/favorite-collections/' + v('coll-upd-id'), {
+    name: v('coll-upd-name'),
+  }, 'coll-upd-res');
+}
+
+async function deleteCollection() {
+  await api('DELETE', '/favorite-collections/' + v('coll-del-id'), null, 'coll-del-res');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  SAVED SEARCHES
+// ═══════════════════════════════════════════════════════════════════════════
+async function getSavedSearches() {
+  await api('GET', '/saved-searches', null, 'ss-list-res');
+}
+
+async function createSavedSearch() {
+  const body = { name: v('ss-name'), query: v('ss-query') };
+  const f = v('ss-filters');
+  if (f) { try { body.filters = JSON.parse(f); } catch { body.filters = f; } }
+  await api('POST', '/saved-searches', body, 'ss-create-res');
+}
+
+async function updateSavedSearch() {
+  const body = {};
+  const name = v('ss-upd-name'); if (name) body.name = name;
+  const q = v('ss-upd-query'); if (q) body.query = q;
+  const f = v('ss-upd-filters');
+  if (f) { try { body.filters = JSON.parse(f); } catch { body.filters = f; } }
+  await api('PATCH', '/saved-searches/' + v('ss-upd-id'), body, 'ss-upd-res');
+}
+
+async function deleteSavedSearch() {
+  await api('DELETE', '/saved-searches/' + v('ss-del-id'), null, 'ss-del-res');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  SEARCH HISTORY
+// ═══════════════════════════════════════════════════════════════════════════
+async function getHistory() {
+  const limit = v('hist-limit') || 50;
+  await api('GET', '/history?limit=' + limit, null, 'hist-list-res');
+}
+
+async function clearHistory() {
+  await api('DELETE', '/history', null, 'hist-del-res');
+}
+
+async function gqlGetHistory() {
+  const limit = parseInt(v('gql-hist-limit')) || 20;
+  await gql(`query GetHistory($limit: Int) {
+  history(limit: $limit) {
+    id query filters createdAt
+  }
+}`, { limit }, 'gql-hist-res');
+}
+
+async function gqlClearHistory() {
+  await gql(`mutation { clearHistory }`, {}, 'gql-hist-clear-res');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  gRPC PROXY
+// ═══════════════════════════════════════════════════════════════════════════
+async function proxySearch() {
+  const body = { query: v('proxy-query') };
+  const f = v('proxy-filters');
+  if (f) { try { body.filters = JSON.parse(f); } catch (e) { show('proxy-res', 'Invalid Filters JSON: ' + e.message, false); return; } }
+  await api('POST', '/proxy/search', body, 'proxy-res');
+}
+
+async function gqlProxySearch() {
+  const filters = v('gql-proxy-filters');
+  let f = null;
+  if (filters) { try { f = JSON.parse(filters); } catch (e) { show('gql-proxy-res', 'Invalid Filters JSON: ' + e.message, false); return; } }
+  await gql(`query ProxySearch($input: ProxySearchDto!) {
+  proxySearch(input: $input) {
+    results
+    total
+    durationMs
+  }
+}`, { input: { query: v('gql-proxy-query'), filters: f } }, 'gql-proxy-res');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  gRPC CALL LOGS
+// ═══════════════════════════════════════════════════════════════════════════
+async function getGrpcLogs() {
+  const limit = v('logs-limit') || 100;
+  await api('GET', '/grpc-call-logs?limit=' + limit, null, 'logs-res');
+}
+
+async function gqlGetLogs() {
+  const limit = parseInt(v('gql-logs-limit')) || 50;
+  await gql(`query GrpcLogs($limit: Int) {
+  grpcCallLogs(limit: $limit) {
+    id userId service method request durationMs status errorMessage createdAt
+  }
+}`, { limit }, 'gql-logs-res');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  SSE
+// ═══════════════════════════════════════════════════════════════════════════
+function sseLog(elId, msg) {
+  const el = document.getElementById(elId);
+  const time = new Date().toLocaleTimeString();
+  el.textContent += `[${time}] ${msg}\n`;
+  el.scrollTop = el.scrollHeight;
+}
+
+function startUserSSE() {
+  if (userSseSource) { userSseSource.close(); }
+  const url = base() + '/sse/events' + (TOKEN ? '?token=' + TOKEN : '');
+  userSseSource = new EventSource(url);
+  document.getElementById('sse-user-status').className = 'badge bg-success align-self-center';
+  document.getElementById('sse-user-status').textContent = 'Connected';
+  userSseSource.onmessage = e => sseLog('sse-user-log', 'message: ' + e.data);
+  userSseSource.onerror  = () => {
+    sseLog('sse-user-log', '⚠ connection error / closed');
+    document.getElementById('sse-user-status').className = 'badge bg-danger align-self-center';
+    document.getElementById('sse-user-status').textContent = 'Error';
+  };
+  userSseSource.addEventListener('notification', e => sseLog('sse-user-log', 'notification: ' + e.data));
+  userSseSource.addEventListener('heartbeat',    e => sseLog('sse-user-log', '♥ heartbeat'));
+  sseLog('sse-user-log', '→ Connecting to ' + url);
+}
+
+function stopUserSSE() {
+  if (userSseSource) { userSseSource.close(); userSseSource = null; }
+  document.getElementById('sse-user-status').className = 'badge bg-secondary align-self-center';
+  document.getElementById('sse-user-status').textContent = 'Disconnected';
+  sseLog('sse-user-log', '✕ Disconnected');
+}
+
+function startAdminSSE() {
+  if (adminSseSource) { adminSseSource.close(); }
+  const url = base() + '/sse/admin/grpc-calls' + (TOKEN ? '?token=' + TOKEN : '');
+  adminSseSource = new EventSource(url);
+  document.getElementById('sse-admin-status').className = 'badge bg-success align-self-center';
+  document.getElementById('sse-admin-status').textContent = 'Connected';
+  adminSseSource.onmessage = e => sseLog('sse-admin-log', 'grpc-call: ' + e.data);
+  adminSseSource.onerror  = () => {
+    sseLog('sse-admin-log', '⚠ connection error / closed');
+    document.getElementById('sse-admin-status').className = 'badge bg-danger align-self-center';
+    document.getElementById('sse-admin-status').textContent = 'Error';
+  };
+  adminSseSource.addEventListener('grpc-call', e => sseLog('sse-admin-log', 'grpc-call: ' + e.data));
+  sseLog('sse-admin-log', '→ Connecting to ' + url);
+}
+
+function stopAdminSSE() {
+  if (adminSseSource) { adminSseSource.close(); adminSseSource = null; }
+  document.getElementById('sse-admin-status').className = 'badge bg-secondary align-self-center';
+  document.getElementById('sse-admin-status').textContent = 'Disconnected';
+  sseLog('sse-admin-log', '✕ Disconnected');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  GRAPHQL EXPLORER – Presets
+// ═══════════════════════════════════════════════════════════════════════════
+const PRESETS = {
+  favorites: {
+    q: `query {
+  favorites {
+    id
+    itemId
+    payload
+    collectionId
+    createdAt
+  }
+}`,
+    v: '{}',
+  },
+  favoriteCollections: {
+    q: `query {
+  favoriteCollections {
+    id
+    name
+    createdAt
+  }
+}`,
+    v: '{}',
+  },
+  savedSearches: {
+    q: `query {
+  savedSearches {
+    id
+    name
+    query
+    filters
+    createdAt
+  }
+}`,
+    v: '{}',
+  },
+  history: {
+    q: `query GetHistory($limit: Int) {
+  history(limit: $limit) {
+    id
+    query
+    filters
+    createdAt
+  }
+}`,
+    v: '{ "limit": 20 }',
+  },
+  grpcCallLogs: {
+    q: `query GrpcCallLogs($limit: Int) {
+  grpcCallLogs(limit: $limit) {
+    id
+    userId
+    service
+    method
+    request
+    durationMs
+    status
+    errorMessage
+    createdAt
+  }
+}`,
+    v: '{ "limit": 50 }',
+  },
+  proxySearch: {
+    q: `query ProxySearch($input: ProxySearchDto!) {
+  proxySearch(input: $input) {
+    results
+    total
+    durationMs
+  }
+}`,
+    v: '{ "input": { "query": "hello world", "filters": { "category": "news" } } }',
+  },
+  addFavorite: {
+    q: `mutation AddFavorite($input: AddFavoriteDto!) {
+  addFavorite(input: $input) {
+    id
+    itemId
+    payload
+    createdAt
+  }
+}`,
+    v: '{ "input": { "itemId": "item-gql-001", "payload": { "title": "GraphQL Test" } } }',
+  },
+  createSavedSearch: {
+    q: `mutation CreateSavedSearch($input: CreateSavedSearchDto!) {
+  createSavedSearch(input: $input) {
+    id
+    name
+    query
+    filters
+    createdAt
+  }
+}`,
+    v: '{ "input": { "name": "My GQL Search", "query": "grpc tutorial", "filters": { "lang": "en" } } }',
+  },
+  clearHistory: {
+    q: `mutation {
+  clearHistory
+}`,
+    v: '{}',
+  },
+};
+
+function loadPreset(name) {
+  const p = PRESETS[name];
+  if (!p) return;
+  document.getElementById('gql-custom-query').value = p.q;
+  document.getElementById('gql-custom-vars').value  = p.v;
+}
+
+async function runCustomGql() {
+  const query = document.getElementById('gql-custom-query').value;
+  let vars = {};
+  try {
+    vars = JSON.parse(document.getElementById('gql-custom-vars').value || '{}');
+  } catch (e) {
+    show('gql-custom-res', 'Invalid Variables JSON: ' + e.message, false);
+    return;
+  }
+  await gql(query, vars, 'gql-custom-res');
+}
+
+// ── Utility ────────────────────────────────────────────────────────────
+function v(id) {
+  const el = document.getElementById(id);
+  return el ? el.value.trim() : '';
+}
+</script>
+</body>
+</html>
