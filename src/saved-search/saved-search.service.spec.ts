@@ -43,12 +43,9 @@ describe('SavedSearchService', () => {
       repo.create!.mockReturnValue(mockSavedSearch);
       repo.save!.mockResolvedValue(mockSavedSearch);
 
-      const result = await service.create(
-        'user-1',
-        'My Search',
-        'test query',
-        { type: 'api' },
-      );
+      const result = await service.create('user-1', 'My Search', 'test query', {
+        type: 'api',
+      });
 
       expect(repo.create).toHaveBeenCalledWith({
         userId: 'user-1',
@@ -117,9 +114,9 @@ describe('SavedSearchService', () => {
     it('should throw NotFoundException when saved search not found', async () => {
       repo.delete!.mockResolvedValue({ affected: 0 } as any);
 
-      await expect(
-        service.delete('user-1', 'nonexistent'),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.delete('user-1', 'nonexistent')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });

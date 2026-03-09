@@ -59,12 +59,8 @@ describe('SearchHistoryService', () => {
       });
       expect(repo.save).toHaveBeenCalledWith(entry);
       // Should invalidate cache for common limit values
-      expect(cacheManager.del).toHaveBeenCalledWith(
-        'history:user-1:limit=10',
-      );
-      expect(cacheManager.del).toHaveBeenCalledWith(
-        'history:user-1:limit=50',
-      );
+      expect(cacheManager.del).toHaveBeenCalledWith('history:user-1:limit=10');
+      expect(cacheManager.del).toHaveBeenCalledWith('history:user-1:limit=50');
       expect(result).toEqual(entry);
     });
   });
@@ -78,9 +74,7 @@ describe('SearchHistoryService', () => {
 
       const result = await service.findByUser('user-1');
 
-      expect(cacheManager.get).toHaveBeenCalledWith(
-        'history:user-1:limit=50',
-      );
+      expect(cacheManager.get).toHaveBeenCalledWith('history:user-1:limit=50');
       expect(repo.find).not.toHaveBeenCalled();
       expect(result).toEqual(cached);
     });
@@ -95,9 +89,7 @@ describe('SearchHistoryService', () => {
 
       const result = await service.findByUser('user-1');
 
-      expect(cacheManager.get).toHaveBeenCalledWith(
-        'history:user-1:limit=50',
-      );
+      expect(cacheManager.get).toHaveBeenCalledWith('history:user-1:limit=50');
       expect(repo.find).toHaveBeenCalledWith({
         where: { userId: 'user-1' },
         order: { createdAt: 'DESC' },
@@ -118,9 +110,7 @@ describe('SearchHistoryService', () => {
 
       await service.findByUser('user-1', 10);
 
-      expect(cacheManager.get).toHaveBeenCalledWith(
-        'history:user-1:limit=10',
-      );
+      expect(cacheManager.get).toHaveBeenCalledWith('history:user-1:limit=10');
       expect(repo.find).toHaveBeenCalledWith({
         where: { userId: 'user-1' },
         order: { createdAt: 'DESC' },
@@ -137,18 +127,10 @@ describe('SearchHistoryService', () => {
       await service.clearByUser('user-1');
 
       expect(repo.delete).toHaveBeenCalledWith({ userId: 'user-1' });
-      expect(cacheManager.del).toHaveBeenCalledWith(
-        'history:user-1:limit=10',
-      );
-      expect(cacheManager.del).toHaveBeenCalledWith(
-        'history:user-1:limit=20',
-      );
-      expect(cacheManager.del).toHaveBeenCalledWith(
-        'history:user-1:limit=50',
-      );
-      expect(cacheManager.del).toHaveBeenCalledWith(
-        'history:user-1:limit=100',
-      );
+      expect(cacheManager.del).toHaveBeenCalledWith('history:user-1:limit=10');
+      expect(cacheManager.del).toHaveBeenCalledWith('history:user-1:limit=20');
+      expect(cacheManager.del).toHaveBeenCalledWith('history:user-1:limit=50');
+      expect(cacheManager.del).toHaveBeenCalledWith('history:user-1:limit=100');
     });
   });
 });

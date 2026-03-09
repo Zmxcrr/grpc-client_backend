@@ -1,6 +1,11 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { GrpcCallLogsService } from './grpc-call-logs.service';
 import { RolesGuard } from '../common/guards';
 import { Roles } from '../common/decorators';

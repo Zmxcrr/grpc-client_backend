@@ -3,7 +3,11 @@ import { UseGuards } from '@nestjs/common';
 import { FavoritesService } from './favorites.service';
 import { Favorite } from './entities/favorite.entity';
 import { FavoriteCollection } from './entities/favorite-collection.entity';
-import { AddFavoriteDto, CreateCollectionDto, UpdateCollectionDto } from './dto';
+import {
+  AddFavoriteDto,
+  CreateCollectionDto,
+  UpdateCollectionDto,
+} from './dto';
 import { GqlAuthGuard } from '../common/guards';
 import { CurrentUser } from '../common/decorators';
 

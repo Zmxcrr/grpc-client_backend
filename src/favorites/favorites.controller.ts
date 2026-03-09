@@ -13,7 +13,11 @@ import { AuthGuard } from '@nestjs/passport';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { FavoritesService } from './favorites.service';
-import { AddFavoriteDto, CreateCollectionDto, UpdateCollectionDto } from './dto';
+import {
+  AddFavoriteDto,
+  CreateCollectionDto,
+  UpdateCollectionDto,
+} from './dto';
 
 @ApiTags('favorites')
 @Controller()

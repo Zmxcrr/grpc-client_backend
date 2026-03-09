@@ -102,9 +102,9 @@ describe('FavoritesService', () => {
         itemId: 'item-1',
       } as Favorite);
 
-      await expect(
-        service.addFavorite('user-1', 'item-1'),
-      ).rejects.toThrow(ConflictException);
+      await expect(service.addFavorite('user-1', 'item-1')).rejects.toThrow(
+        ConflictException,
+      );
     });
   });
 
@@ -130,9 +130,9 @@ describe('FavoritesService', () => {
     it('should throw NotFoundException when favorite not found', async () => {
       favoriteRepo.delete!.mockResolvedValue({ affected: 0 } as any);
 
-      await expect(
-        service.removeFavorite('user-1', 'item-1'),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.removeFavorite('user-1', 'item-1')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 

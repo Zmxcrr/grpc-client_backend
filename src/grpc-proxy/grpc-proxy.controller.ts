@@ -1,6 +1,11 @@
 import { Controller, Post, Body, UseGuards, Req } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+} from '@nestjs/swagger';
 import type { Request } from 'express';
 import { GrpcProxyService } from './grpc-proxy.service';
 import { ProxySearchDto, ProxySearchResponse } from './dto';

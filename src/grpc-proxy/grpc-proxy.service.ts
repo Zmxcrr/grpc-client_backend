@@ -130,7 +130,7 @@ export class GrpcProxyService implements OnModuleInit {
         { deadline: new Date(Date.now() + 5000) },
         (error: any, response: any) => {
           if (error) {
-            reject(error);
+            reject(error instanceof Error ? error : new Error(String(error)));
           } else {
             resolve(response);
           }

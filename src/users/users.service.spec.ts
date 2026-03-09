@@ -83,7 +83,6 @@ describe('UsersService', () => {
 
   describe('create', () => {
     it('should create and save a new user', async () => {
-      const createdUser = { email: 'new@example.com', passwordHash: 'hashed' };
       repo.create!.mockReturnValue(mockUser);
       repo.save!.mockResolvedValue(mockUser);
 
