@@ -82,7 +82,7 @@ export class FavoritesController {
     @Body() dto: UpdateCollectionDto,
   ) {
     const user = req.user as any;
-    return this.favoritesService.updateCollection(user.id, id, dto.name!);
+    return this.favoritesService.updateCollection(user.id, id, dto.name);
   }
 
   @Delete('favorite-collections/:id')

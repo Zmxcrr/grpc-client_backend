@@ -5,7 +5,7 @@ import { ApiProperty } from '@nestjs/swagger';
 @InputType()
 export class UpdateCollectionDto {
   @ApiProperty({ example: 'Renamed Collection' })
-  @Field()
+  @Field({ nullable: true })
   @IsString()
   @IsOptional()
   name?: string;

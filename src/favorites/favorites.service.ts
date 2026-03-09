@@ -108,7 +108,7 @@ export class FavoritesService {
   async updateCollection(
     userId: string,
     collectionId: string,
-    name: string,
+    name?: string,
   ): Promise<FavoriteCollection> {
     const collection = await this.collectionRepository.findOne({
       where: { id: collectionId, userId },
@@ -116,7 +116,9 @@ export class FavoritesService {
     if (!collection) {
       throw new NotFoundException('Collection not found');
     }
-    collection.name = name;
+    if (name !== undefined) {
+      collection.name = name;
+    }
     return this.collectionRepository.save(collection);
   }
 

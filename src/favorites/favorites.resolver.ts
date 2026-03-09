@@ -69,7 +69,7 @@ export class FavoritesResolver {
     @Args('id') id: string,
     @Args('input') input: UpdateCollectionDto,
   ): Promise<FavoriteCollection> {
-    return this.favoritesService.updateCollection(user.id, id, input.name!);
+    return this.favoritesService.updateCollection(user.id, id, input.name);
   }
 
   @Mutation(() => Boolean)
