@@ -1,0 +1,24 @@
+import { IsString, IsOptional } from 'class-validator';
+import { InputType, Field } from '@nestjs/graphql';
+import { ApiProperty } from '@nestjs/swagger';
+import { GraphQLJSON } from 'graphql-type-json';
+
+@InputType()
+export class UpdateSavedSearchDto {
+  @ApiProperty({ required: false })
+  @Field({ nullable: true })
+  @IsString()
+  @IsOptional()
+  name?: string;
+
+  @ApiProperty({ required: false })
+  @Field({ nullable: true })
+  @IsString()
+  @IsOptional()
+  query?: string;
+
+  @ApiProperty({ required: false })
+  @Field(() => GraphQLJSON, { nullable: true })
+  @IsOptional()
+  filters?: Record<string, any>;
+}
