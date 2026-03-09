@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>gRPC Client Frontend</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <h1>gRPC Client Frontend</h1>
+      <p class="hint">
+        Simple frontend for backend REST API. Login/Register first to use
+        protected routes.
+      </p>
+
+      <section class="card">
+        <h2>Auth</h2>
+        <div class="row">
+          <input id="email" type="email" placeholder="Email" />
+          <input id="password" type="password" placeholder="Password" />
+        </div>
+        <div class="row">
+          <button id="registerBtn" type="button">Register</button>
+          <button id="loginBtn" type="button">Login</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Proxy Search</h2>
+        <div class="row">
+          <input id="query" type="text" placeholder="Search query" />
+          <input
+            id="filters"
+            type="text"
+            placeholder='Filters JSON, e.g. {"category":"news"}'
+          />
+          <button id="searchBtn" type="button">Search</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Data</h2>
+        <div class="row">
+          <button id="historyBtn" type="button">Get History</button>
+          <button id="favoritesBtn" type="button">Get Favorites</button>
+          <button id="savedBtn" type="button">Get Saved Searches</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Response</h2>
+        <pre id="output"></pre>
+      </section>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>
